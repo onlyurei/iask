@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Panel xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" title="单击课程名查看课程问题库">
+	<mx:Script>
+		<![CDATA[
+			import com.iask.model.IaskModelLocator;
+			import com.iask.model.Course;
+			import com.iask.model.User;
+			import com.iask.util.CairngormUtils;
+			import com.iask.control.EventNames;
+		
+			[Bindable]
+			private var _model:IaskModelLocator = IaskModelLocator.getInstance();
+			
+			private function handleCourseListChange():void
+			{
+				_model.searchKeywords = "";
+				if (coursesList.selectedItem != null)
+				{
+					_model.selectedCourse = Course(coursesList.selectedItem);
+					_model.courseListSelectedItem = _model.selectedCourse;
+					if (_model.selectedCourse.isAllEntriesRetrieved)
+					{
+						_model.searchResultListRefreshButtonLabel = "刷新此课程问题库";
+					}
+					else
+					{
+						_model.searchResultListRefreshButtonLabel = "查看此课程全部条目";
+					}
+				}
+				else
+				{
+					_model.selectedCourse = null;
+					_model.courseListSelectedItem = null;
+				}
+				if (_model.selectedCourse != null)
+				{
+					_model.mainBoxTabState = IaskModelLocator.VIEWING_SEARCH_RESULT_TAB;
+					if (!_model.selectedCourse.isAllEntriesRetrieved)
+					{
+						CairngormUtils.dispatchEvent(EventNames.LIST_COURSE_ENTRIES, _model.selectedCourse);
+					}
+				}
+			}
+			
+			private function labelToShow(item:Object):String
+			{
+				return item.name;
+			}
+		]]>
+	</mx:Script>
+	<mx:List id="coursesList" dataProvider="{_model.courses}" labelFunction="labelToShow"
+		width="100%" height="100%" maxWidth="230" rowHeight="24"
+		change="handleCourseListChange()"/>
+</mx:Panel>

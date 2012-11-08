@@ -1,0 +1,12 @@
+<h1>Editing relevance</h1>
+
+<%= error_messages_for :relevance %>
+
+<% form_for(@relevance) do |f| %>
+  <p>
+    <%= f.submit "Update" %>
+  </p>
+<% end %>
+
+<%= link_to 'Show', @relevance %> |
+<%= link_to 'Back', relevances_path %>

@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" creationComplete="initComponent()">
+	<mx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			import com.iask.model.Course;
+			import com.iask.model.Entry;
+			import com.iask.model.Keyword;
+			import com.iask.model.IaskModelLocator;
+			import com.iask.util.CairngormUtils;
+			import com.iask.control.EventNames;
+			import mx.validators.Validator;
+			import mx.controls.Alert;
+			import mx.managers.CursorManager;
+			import mx.events.CloseEvent;
+			import mx.core.IFlexDisplayObject;
+			import mx.core.Application;
+			import mx.managers.PopUpManager;
+			
+			[Bindable]
+			private var _model:IaskModelLocator = IaskModelLocator.getInstance();
+		
+			private function initComponent():void
+			{
+				deleteEntryButton.enabled = false;
+				updateEntryButton.enabled = false;
+			}
+		
+			private function handleKeywordsDGChange():void
+			{
+				_model.selectedKeyword = "";
+				for each (var i:Keyword in keywordsDG.selectedItems)
+				{
+					_model.selectedKeyword += i.value + " ";
+				}
+			}
+			
+			private function selectKeywordTIAll():void
+			{
+				keywordTI.selectionBeginIndex = 0;
+				keywordTI.selectionEndIndex = keywordTI.text.length;
+			}
+			
+			private function getRowNum(oItem:Object,iCol:int):String
+    		{
+    			var index:int = (keywordsDG.dataProvider as ArrayCollection).getItemIndex(oItem) + 1;
+    			return index.toString();
+    		}
+    		
+    		private function handleDeleteEntryButtonClick():void
+    		{
+    			Alert.show("您确定要删除这一条目吗？（本操作不可撤销）", 
+					"确认删除条目", Alert.NO|Alert.YES, this, handleAlertClick, null, Alert.NO);
+    		}
+    		
+    		private function handleAlertClick(event:CloseEvent):void
+			{
+				if (event.detail == Alert.YES)
+				{
+					CairngormUtils.dispatchEvent(EventNames.DESTROY_ENTRY, _model.selectedEntry);
+				}
+			}
+			
+			private function popUpDetailBox():void
+    		{
+    			var detailWindow:IFlexDisplayObject = PopUpManager.createPopUp(Application.application.mainStack, ViewDetailBox);
+    			PopUpManager.centerPopUp(detailWindow);
+    			var detailComponent:ViewDetailBox = ViewDetailBox(detailWindow);
+    			detailComponent.title = _model.selectedEntry.question;
+    			detailComponent.detailTI.htmlText = _model.selectedEntry.answer;
+    		}
+			
+			private function handleUpdateEntryButtonClick():void
+			{
+				questionValidator.enabled = true;
+				answerValidator.enabled = true;
+				var results:Array = Validator.validateAll(
+				[questionValidator, answerValidator]);
+				if (results.length > 0)
+				{
+					Alert.show("请改正表单上用红色线框标出的错误。", "更新条目失败");
+					return;
+				}
+				var entry:Entry = _model.selectedEntry;
+				entry.question = questionTI.text;
+				entry.answer = answerTI.htmlText;
+				if (entry.course != courseSelectCB.selectedItem)
+				{
+					entry.course.removeEntry(entry);
+					_model.selectedCourse.addEntry(entry);
+				}
+				CairngormUtils.dispatchEvent(EventNames.UPDATE_ENTRY, entry);
+				questionValidator.enabled = false;
+				answerValidator.enabled = false;
+			}
+			
+			private function handleCourseSelectCBChange():void
+			{
+				_model.selectedCourse = Course(courseSelectCB.selectedItem);
+			}
+			
+			public function updateKeyword(keyword:Keyword):void
+			{
+				CairngormUtils.dispatchEvent(EventNames.UPDATE_KEYWORD, keyword);
+			}
+			
+			public function deleteKeyword(keyword:Keyword):void
+			{
+				CairngormUtils.dispatchEvent(EventNames.DESTROY_RELEVANCE, keyword);
+			}
+			
+			private function handleSubmitKeywordButtonClick():void
+			{	
+				keywordValidator.enabled = true;
+				var results:Array = Validator.validateAll(
+				[keywordValidator]);
+				if (results.length > 0)
+				{
+					Alert.show("请改正表单上用红色线框标出的错误。", "为条目添加关键词失败");
+					return;
+				}
+				if (relevanceSlider.value == 0)
+				{
+					Alert.show("关键词相对于本条目的关联度不能为0。", "为条目添加关键词失败");
+					return;
+				}
+				var ithKeyword:Keyword;
+				for (var i:int = 0; i < _model.selectedEntry.keywords.length; i++)
+				{
+					ithKeyword = Keyword(_model.selectedEntry.keywords.getItemAt(i));
+					if (keywordTI.text == ithKeyword.value)
+					{
+						Alert.show("本条目已经有这个关键词了。", "为条目添加关键词失败");
+						return;
+					}
+				}
+				var keyword:Keyword = new Keyword(keywordTI.text.toLowerCase(), relevanceSlider.value, _model.selectedEntry);
+				CairngormUtils.dispatchEvent(EventNames.CREATE_KEYWORD, keyword);
+				keywordValidator.enabled = false;
+			}
+		]]>
+	</mx:Script>
+	<mx:StringValidator id="keywordValidator" source="{keywordTI}" property="text"
+   		required="true" minLength="1" maxLength="40" enabled="false"/>
+   	<mx:StringValidator id="questionValidator" source="{questionTI}" property="text"
+   		required="true" minLength="1" maxLength="120" enabled="false"/>
+   	<mx:StringValidator id="answerValidator" source="{answerTI}" property="text"
+   		required="true" minLength="2" enabled="false"/>
+	<mx:VDividedBox width="100%" height="100%">
+		<mx:VBox width="100%" height="70%">
+			<mx:HBox width="100%" verticalAlign="middle">
+				<mx:Text text="解答者：{_model.selectedEntry.userLastName} {_model.selectedEntry.userFirstName} 老师"/>
+				<mx:Text text="  此条目属于课程：" toolTip="（可更改）"/>
+				<mx:ComboBox dataProvider="{_model.courses}" labelField="name" prompt="(尚未选择条目)" 
+					enabled="{updateEntryButton.enabled}" change="handleCourseSelectCBChange()" toolTip="可更改此条目属于的课程"
+					width="100%" id="courseSelectCB" rowCount="20" selectedItem="{_model.selectedEntry.course}"/>
+			</mx:HBox>
+			<mx:HBox width="100%">
+				<mx:Text text="标题："/>
+				<mx:TextInput id="questionTI" width="100%" text="{_model.selectedEntry.question}" 
+					editable="{updateEntryButton.enabled}"/>
+			</mx:HBox>
+			<mx:RichTextEditor id="answerTI" width="100%" height="100%" title="解答" 
+				doubleClickEnabled="{_model.selectedEntry != null}" doubleClick="popUpDetailBox()"
+				htmlText="{_model.selectedEntry.answer}" enabled="{_model.selectedEntry != null}"
+				focusIn="answerTI.showControlBar = true;" showControlBar="false"
+                focusOut="answerTI.showControlBar = false;"/>
+			<mx:HBox width="100%">
+				<mx:Button id="updateEntryButton" height="25" width="100%" label="更新" click="handleUpdateEntryButtonClick()" 
+					enabled="{_model.selectedEntry.userOfficialId == _model.user.officialId}"/>
+				<mx:Button id="deleteEntryButton" label="删除" height="25" width="60" toolTip="删除此条目"
+					enabled="{updateEntryButton.enabled}" textRollOverColor="#ff0000"
+				    click="handleDeleteEntryButtonClick()"/>
+			</mx:HBox>
+		</mx:VBox>
+		<mx:VBox width="100%" height="30%">
+			<mx:DataGrid height="100%" width="100%" id="keywordsDG" change="handleKeywordsDGChange()"
+				dataProvider="{_model.selectedEntry.keywords}" allowMultipleSelection="true" rowHeight="24">
+				<mx:columns>
+					<mx:DataGridColumn headerText="关键词" dataField="value"/>
+					<mx:DataGridColumn headerText="相对本条目关联度" dataField="relevance">
+						<mx:itemRenderer>
+							<mx:Component>
+							    <mx:HBox width="100%" verticalAlign="buttom">
+							    	<mx:Script>
+							    		<![CDATA[
+							    			import com.iask.model.Keyword;
+							    			private function updateKeyword(keyword:Keyword):void
+							    			{
+							    				var k:Keyword = keyword;
+							    				if (k.relevance != 0)
+							    				{
+							    					k.relevance = relevanceSlider.value;
+							    					outerDocument.updateKeyword(k);
+							    				}
+							    			}
+							    		]]>
+							    	</mx:Script>
+							    	<mx:Text text="{relevanceSlider.value}"/>
+							    	<mx:HSlider id="relevanceSlider" minimum="1" maximum="100" snapInterval="1" 
+							    		tickInterval="25" value="{data.relevance}" width="240"
+							    		enabled="{outerDocument.updateEntryButton.enabled}"
+							    	    change="updateKeyword(Keyword(data))"/>
+							    </mx:HBox>
+							</mx:Component>
+						</mx:itemRenderer>
+					</mx:DataGridColumn>
+					<mx:DataGridColumn headerText="" width="66" editable="false" sortable="false"
+				    	draggable="false" dataField="value">
+						<mx:itemRenderer>
+							<mx:Component>
+								<mx:Button label="删除" height="20" toolTip="单击即删除此关键词"
+				    		    	click="outerDocument.deleteKeyword(Keyword(data))" 
+				    		    	enabled="{outerDocument.updateEntryButton.enabled}"
+				    		        textRollOverColor="#ff0000">
+				    		    	<mx:Script>
+					    		    	<![CDATA[
+					    		    		import com.iask.model.Keyword;
+					    		    	]]>
+				    		    	</mx:Script>
+				    		    </mx:Button>
+							</mx:Component>
+						</mx:itemRenderer>
+					</mx:DataGridColumn>
+				</mx:columns>
+		    </mx:DataGrid>
+		    <mx:VBox width="100%" verticalAlign="middle">
+				<mx:HBox width="100%" verticalAlign="middle">
+					<mx:Text text="为条目添加关键词："/>
+					<mx:TextInput id="keywordTI" focusIn="selectKeywordTIAll()" enabled="{updateEntryButton.enabled}"/>
+					<mx:Text text="相对本条目关联度：{relevanceSlider.value}"/>
+					<mx:HSlider id="relevanceSlider" maximum="100" snapInterval="1" tickInterval="25"
+			    		labels="[0, 25, 50, 75, 100]" enabled="{updateEntryButton.enabled}" width="100%"/>
+				</mx:HBox>
+				<mx:Button id="submitKeywordButton" label="提交" width="100%" height="25" 
+					enabled="{updateEntryButton.enabled}" click="handleSubmitKeywordButtonClick()"/>
+			</mx:VBox>
+		</mx:VBox>
+	</mx:VDividedBox>
+</mx:VBox>

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" width="650" height="450" 
+	title="提交新问题" showCloseButton="true" close="handleTitleWindowClose(event)">
+	<mx:Script>
+		<![CDATA[
+			import com.iask.model.IaskModelLocator;
+			import com.iask.model.Course;
+			import com.iask.model.Query;
+			import com.iask.model.User;
+			import com.iask.control.EventNames;
+			import com.iask.util.CairngormUtils;
+			import mx.controls.Alert;
+			import mx.validators.Validator;
+			import mx.events.CloseEvent;
+            import mx.managers.PopUpManager;
+
+
+			[Bindable]
+			private var _model:IaskModelLocator = IaskModelLocator.getInstance();
+
+            private function handleTitleWindowClose(evt:CloseEvent):void 
+            {
+                PopUpManager.removePopUp(this);
+            }
+			
+			private function selectAll():void
+			{
+				queryTI.selectionBeginIndex = 0;
+				queryTI.selectionEndIndex = queryTI.text.length;
+			}
+			
+			private function handleCourseSelectCBChange():void
+			{
+				_model.selectedCourse = Course(courseSelectCB.selectedItem);
+			}
+			
+			private function labelToShow(item:Object):String
+			{
+				return item.lastName + item.firstName + " 老师";
+			}
+			
+			private function validateAndSubmit():void
+			{	
+				queryValidator.enabled = true;
+				var results:Array = Validator.validateAll(
+				[queryValidator]);
+				if (results.length > 0)
+				{
+					Alert.show("请改正表单上用红色线框标出的错误。", "创建提问失败");
+					return;
+				}
+				var query:Query = new Query(queryTI.text, false, null, Course(courseSelectCB.selectedItem),
+				    Course(courseSelectCB.selectedItem).officialId, Course(courseSelectCB.selectedItem).name, 
+					_model.user.officialId, _model.user.lastName, _model.user.firstName, 
+					User(teacherSelectCB.selectedItem).officialId, User(teacherSelectCB.selectedItem).lastName,
+					User(teacherSelectCB.selectedItem).firstName, User(teacherSelectCB.selectedItem));
+				if (query.teacher == User.TEACHER_NONE || query.teacher == null)
+				{
+					CairngormUtils.dispatchEvent(EventNames.CREATE_QUERIES, query);
+				}
+				else
+				{
+					CairngormUtils.dispatchEvent(EventNames.CREATE_QUERY, query);
+				}
+				queryValidator.enabled = false;
+			}
+		]]>
+	</mx:Script>
+	<mx:StringValidator id="queryValidator" source="{queryTI}" property="text"
+   		required="true" minLength="6" enabled="false"/>
+	<mx:VBox width="100%" height="100%" horizontalAlign="center">
+		<mx:HBox width="100%" verticalAlign="middle">
+			<mx:Label text="问题所属课程："/>
+			<mx:ComboBox width="65%" id="courseSelectCB" labelField="name"
+				dataProvider="{_model.courses}" prompt="选择问题所属课程..." change="handleCourseSelectCBChange()" 
+				selectedItem="{_model.selectedCourse}" rowCount="20"/>
+			<mx:Label text="期望的答疑教师："/>
+			<mx:ComboBox width="35%" id="teacherSelectCB" dataProvider="{_model.selectedCourse.teachersAndNone}" 
+				labelFunction="labelToShow" selectedItem="{_model.selectedTeacher}" rowCount="20"/>
+		</mx:HBox>
+		<mx:Panel width="100%" height="100%" title="输入问题">
+			<mx:TextArea id="queryTI" focusIn="selectAll()" width="100%" height="100%" 
+				enabled="{(courseSelectCB.selectedItem == null || _model.selectedCourse.teachers == null || _model.selectedCourse.teachers.length == 0) ? false : true}" 
+				text="{(_model.selectedCourse.teachers.length == 0) ? '很抱歉，此课程目前暂时还没有答疑教师。' : '请尽可能详细地说明问题，以便答疑教师能更好地为您解答。'}"/>
+			<mx:Button label="提交" height="25" width="100%" enabled="{queryTI.enabled}" 
+				click="validateAndSubmit()"/>
+		</mx:Panel>
+	</mx:VBox>
+</mx:TitleWindow>

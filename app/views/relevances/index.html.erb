@@ -1,0 +1,18 @@
+<h1>Listing relevances</h1>
+
+<table>
+  <tr>
+  </tr>
+
+<% for relevance in @relevances %>
+  <tr>
+    <td><%= link_to 'Show', relevance %></td>
+    <td><%= link_to 'Edit', edit_relevance_path(relevance) %></td>
+    <td><%= link_to 'Destroy', relevance, :confirm => 'Are you sure?', :method => :delete %></td>
+  </tr>
+<% end %>
+</table>
+
+<br />
+
+<%= link_to 'New relevance', new_relevance_path %>

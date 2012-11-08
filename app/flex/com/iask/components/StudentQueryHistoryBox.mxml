@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" label="提问记录    ">
+	<mx:Script>
+		<![CDATA[
+			import com.iask.model.Query;
+			import com.iask.model.IaskModelLocator;
+			import mx.collections.ArrayCollection;
+			import com.iask.control.EventNames;
+			import com.iask.util.CairngormUtils;
+			import mx.managers.PopUpManager;
+			import mx.core.IFlexDisplayObject;
+			import mx.core.Application;
+			import mx.controls.Alert;
+			
+			[Bindable]
+			private var _model:IaskModelLocator = IaskModelLocator.getInstance();
+		
+			[Bindable]
+			private var _upperButtonLabel:String = "请在左边提问列表选择一个提问";
+			
+			[Bindable]
+			private var _idleLabel:String = "请在左边提问列表选择一个提问";
+			
+			[Bindable]
+			private var _unresponsedLabel:String = "(此问题还没有被答复)";
+			
+			private var _upperButtonState:String = "disabled";
+		
+			private function getRowNum(oItem:Object,iCol:int):String
+    		{
+    			var index:int = (queriesDG.dataProvider as ArrayCollection).getItemIndex(oItem) + 1;
+    			return index.toString();
+    		}
+    		
+    		private function labelToShow(item:Object, column:DataGridColumn):String
+			{
+				return item.teacherLastName + " " + item.teacherFirstName + " 老师";
+			}
+			
+			private function updateFilterFunction():void
+			{
+				switch (choiceCB.selectedItem.data)
+				{
+					case _model.RESPONSED_QUERIES:
+						_model.queriesFilterName == "responsed";
+						_model.selectedQueriesFilter = _model.SHOW_CHOICES[0];
+						if (_model.unsolvedQueries == null)
+						{
+							CairngormUtils.dispatchEvent(EventNames.LIST_UNSOLVED_QUERIES);
+						}
+						else
+						{
+							_model.queries = _model.unsolvedQueries;
+							if (_model.queries.filterFunction != _model.responsedQueriesFilterFunc)
+							{
+								_model.queries.filterFunction = _model.responsedQueriesFilterFunc;
+								_model.queries.refresh();
+							}
+						}
+						break;
+					case _model.UNRESPONSED_QUERIES:
+						_model.queriesFilterName == "unresponsed";
+						_model.selectedQueriesFilter = _model.SHOW_CHOICES[1];
+						if (_model.unsolvedQueries == null)
+						{
+							CairngormUtils.dispatchEvent(EventNames.LIST_UNSOLVED_QUERIES);
+						}
+						else
+						{
+							_model.queries = _model.unsolvedQueries;
+							if (_model.queries.filterFunction != _model.unresponsedQueriesFilterFunc)
+							{
+								_model.queries.filterFunction = _model.unresponsedQueriesFilterFunc;
+								_model.queries.refresh();
+							}
+						}
+						break;
+					case _model.SOLVED_QUERIES:
+						_model.queriesFilterName == "solved";
+						_model.selectedQueriesFilter = _model.SHOW_CHOICES[2];
+						if (_model.solvedQueries == null)
+						{
+							CairngormUtils.dispatchEvent(EventNames.LIST_SOLVED_QUERIES);
+						}
+						else
+						{
+							_model.queries = _model.solvedQueries;
+						}
+						break;
+					case _model.ALL_QUERIES:
+						_model.queriesFilterName == "all";
+						_model.selectedQueriesFilter = _model.SHOW_CHOICES[3];
+						if (_model.allQueries == null)
+						{
+							CairngormUtils.dispatchEvent(EventNames.LIST_QUERIES);
+						}
+						else
+						{
+							_model.queries = _model.allQueries;
+						}
+						break;
+					default:
+						break;
+				}
+			}
+			
+			private function refreshQueries():void
+			{
+				CairngormUtils.dispatchEvent(EventNames.LIST_UNSOLVED_QUERIES);
+				CairngormUtils.dispatchEvent(EventNames.LIST_QUERIES);
+				_model.queriesFilterName = "all";
+			}
+			
+			private function handleQueriesDGChange():void
+			{
+				if (queriesDG.selectedItem == null)
+				{
+					_upperButtonLabel = "请在左边提问列表选择一个提问";
+					_upperButtonState = "disabled";
+				}
+				else if ((queriesDG.selectedItem.answer == "" || queriesDG.selectedItem.answer == null) && !queriesDG.selectedItem.solved)
+				{
+					_upperButtonLabel = "因为此问题还没有被答复，您可以修改它，修改完后请点此按钮保存";
+					questionTI.editable = true;
+					_upperButtonState = "update";
+				}
+				else if (queriesDG.selectedItem.answer != "" && queriesDG.selectedItem.answer != null && !queriesDG.selectedItem.solved)
+				{
+					_upperButtonLabel = "如果您对解答有疑问，请在上面的问题框内说明，并点此按钮提交";
+					questionTI.editable = true;
+					_upperButtonState = "update";
+				}
+				else if (queriesDG.selectedItem.solved)
+				{
+					_upperButtonLabel = "此问题已经被解决";
+					questionTI.editable = false;
+					_upperButtonState = "disabled";
+				}
+			}
+			
+			private function confirmAnswer():void
+			{
+				var query:Query = Query(queriesDG.selectedItem);
+				query.solved = true;
+				CairngormUtils.dispatchEvent(EventNames.UPDATE_QUERY, query);
+			}
+			
+			private function updateQuery():void
+			{
+				var query:Query = Query(queriesDG.selectedItem);
+				if (questionTI.text == "")
+				{
+					Alert.show("请输入提问内容。", "更新提问失败");
+					return;
+				}
+				query.question = questionTI.text;
+				CairngormUtils.dispatchEvent(EventNames.UPDATE_QUERY, query);
+			}
+			
+    		private function popUpQuerySubmitBox():void
+    		{
+    			var queryWindow:IFlexDisplayObject = PopUpManager.createPopUp(Application.application.studentMainBox, QuerySubmitBox);
+    			PopUpManager.centerPopUp(queryWindow);
+    		}
+    		
+    		private function popUpDetailBox():void
+    		{
+    			var detailWindow:IFlexDisplayObject = PopUpManager.createPopUp(Application.application.mainStack, ViewDetailBox);
+    			PopUpManager.centerPopUp(detailWindow);
+    			var detailComponent:ViewDetailBox = ViewDetailBox(detailWindow);
+    			detailComponent.title = queriesDG.selectedItem.question;
+    			detailComponent.detailTI.htmlText = answerTI.htmlText;
+    		}
+		]]>
+	</mx:Script>
+	<mx:HDividedBox width="100%" height="100%">
+		<mx:VBox width="42%" height="100%">
+			<mx:HBox width="100%" verticalAlign="middle">
+				<mx:Text text="查看："/>
+				<mx:ComboBox id="choiceCB" dataProvider="{_model.SHOW_CHOICES}" rowCount="20" width="100%"
+				    change="updateFilterFunction()" selectedItem = "{_model.selectedQueriesFilter}"/>
+				<mx:Button id="refreshQueriesButton" click="refreshQueries()" label="刷新" height="20" width="50"/>
+			</mx:HBox>
+			<mx:DataGrid id="queriesDG" dataProvider="{_model.queries}" width="100%" height="100%" 
+				change="handleQueriesDGChange()" rowHeight="24" doubleClickEnabled="{queriesDG.selectedItem != null}" 
+				doubleClick="popUpDetailBox()">
+				<mx:columns>
+					<mx:DataGridColumn labelFunction="getRowNum" width="23" editable="false"
+						sortable="false" draggable="false" textAlign="center"
+						paddingLeft="0" paddingRight="0"/>
+					<mx:DataGridColumn headerText="课程" dataField="courseName" width="90"/>
+					<mx:DataGridColumn headerText="问题" dataField="question"/>
+					<mx:DataGridColumn headerText="解答者" dataField="teacherLastName" labelFunction="labelToShow" 
+						width="72"/>
+				</mx:columns>
+			</mx:DataGrid>
+		</mx:VBox>
+		<mx:VDividedBox width="58%" height="100%">
+			<mx:VBox width="100%" height="30%">
+				<mx:HBox width="100%" horizontalAlign="right">
+					<mx:Button width="100" height="20" label="提交新问题..."
+						enabled="{_model.selectedCourse != null}" click="popUpQuerySubmitBox()" color="#ff9900"
+					    toolTip="提问之前，请先点击系统左侧课程列表查看该课程的问题库，确认没有您想要的答案后再提问。"/>
+				</mx:HBox>
+				<mx:Text text="此问题属于课程“{queriesDG.selectedItem.courseName}”"/>
+				<mx:TextArea id="questionTI" width="100%" height="100%" enabled="{queriesDG.selectedItem != null}"
+				    text="{queriesDG.selectedItem.question}"/>
+				<mx:Button id="upperButton" width="100%" label="{queriesDG.selectedItem == null ? _idleLabel  : _upperButtonLabel}" 
+					enabled="{(queriesDG.selectedItem == null || queriesDG.selectedItem.solved) ? false : true}"
+					click="updateQuery()"/>
+			</mx:VBox>
+			<mx:VBox width="100%" height="70%">
+				<mx:Text text="解答者：{queriesDG.selectedItem.teacherLastName}{queriesDG.selectedItem.teacherFirstName} 老师"/>
+				<mx:TextArea id="answerTI" width="100%" height="100%" enabled="{questionTI.enabled}"
+				    htmlText="{(queriesDG.selectedItem.answer == '' || queriesDG.selectedItem.answer == null) ? _unresponsedLabel : queriesDG.selectedItem.answer}" 
+				    editable="false" doubleClickEnabled="{queriesDG.selectedItem != null}" doubleClick="popUpDetailBox()"/>
+				<mx:Button id="confirmButton" width="100%" label="如果您对此解答满意，请点此按钮确认" click="confirmAnswer()" 
+					enabled="{(queriesDG.selectedItem == null || queriesDG.selectedItem.answer == null || 
+					          queriesDG.selectedItem.answer == '' || queriesDG.selectedItem.solved) ? false : true}" 
+					          color="#33eeff"/>
+			</mx:VBox>
+		</mx:VDividedBox>
+	</mx:HDividedBox>
+</mx:VBox>

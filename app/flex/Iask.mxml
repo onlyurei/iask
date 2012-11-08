@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml"
+	xmlns:iask="com.iask.components.*" 
+	xmlns:control="com.iask.control.*"
+	layout="vertical" 
+    horizontalAlign="left"
+    verticalAlign="top"
+    paddingLeft = "0"
+    paddingRight="0"
+    paddingTop="0"
+    paddingBottom="0"
+	width="100%"
+	height="100%" fontSize="12"
+    creationCompleteEffect="fadeIn">
+    <mx:Style source="com/iask/styles/shadow/shadow.css"/>
+	<mx:Script>
+		<![CDATA[
+			import mx.core.Container;
+			import com.iask.util.DebugMessage;
+		    import com.iask.model.IaskModelLocator;
+			
+			[Bindable]
+			private var _currentViewStackIndex:int = 0;
+			
+			[Bindable]
+			private var _model:IaskModelLocator = IaskModelLocator.getInstance();
+		
+			public static function debug(str:String):void
+		    {
+		    	application.debugPanel.addMessage(new DebugMessage(str));
+		    }
+			
+			private function controlViewToShow(workflowState:int):Container
+		    {
+		    	if (workflowState == IaskModelLocator.VIEWING_SPLASH_SCREEN)
+		    	{
+		    		return splashBox;
+		    	}
+		    	else if (workflowState == IaskModelLocator.VIEWING_STUDENT_MAIN_BOX)
+		    	{
+		    		return studentMainBox;
+		    	}
+		    	else if (workflowState == IaskModelLocator.VIEWING_TEACHER_MAIN_BOX)
+		    	{
+		    		return teacherMainBox;
+		    	}
+		    	else if (workflowState == IaskModelLocator.VIEWING_ADMIN_MAIN_BOX)
+		    	{
+		    		return adminMainBox;
+		    	}
+		    	else
+		    	{
+		    		return splashBox;
+		    	}
+		    }
+		]]>
+	</mx:Script>
+	<control:IaskController id="controller"/>
+	<mx:Fade id="fadeIn" duration="1200"/>
+	<mx:WipeUp id="wipeUp" duration="800"/>
+	<mx:WipeDown id="wipeDown" duration="800"/>
+	<!--<mx:VDividedBox id="mainVDividedBox" width="100%" height="100%">-->
+		<mx:ViewStack id="mainStack" width="100%" height="100%" 
+			selectedChild="{controlViewToShow(_model.workflowState)}">
+			<iask:SplashBox id="splashBox"/>
+			<iask:StudentMainBox id="studentMainBox" showEffect="wipeUp" hideEffect="wipeDown"/>
+			<iask:TeacherMainBox id="teacherMainBox" showEffect="wipeUp" hideEffect="wipeDown"/>
+			<iask:AdminMainBox id="adminMainBox" showEffect="wipeUp" hideEffect="wipeDown"/>
+		</mx:ViewStack>
+		<!--<iask:DebugPanel id="debugPanel" height="0%" width="100%"/>-->
+	<!--</mx:VDividedBox>-->
+</mx:Application>

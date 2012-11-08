@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" width="500" height="320" 
+	xmlns:cpv="com.iask.validators.*"
+	title="为用户“{_model.selectedUser.lastName} {_model.selectedUser.firstName}”添加课程" showCloseButton="true" close="handleTitleWindowClose(event)">
+	<mx:Script>
+		<![CDATA[
+			import com.iask.model.IaskModelLocator;
+			import com.iask.model.Course;
+			import com.iask.control.EventNames;
+			import com.iask.util.CairngormUtils;
+			import mx.controls.Alert;
+			import mx.validators.Validator;
+			import mx.events.CloseEvent;
+            import mx.managers.PopUpManager;
+
+
+			[Bindable]
+			private var _model:IaskModelLocator = IaskModelLocator.getInstance();
+
+            private function handleTitleWindowClose(evt:CloseEvent):void 
+            {
+                PopUpManager.removePopUp(this);
+            }
+            
+			private function validateAndSubmit():void
+			{
+				var results:Array = Validator.validateAll(
+				[officialIdValidator]);
+				if (results.length > 0)
+				{
+					Alert.show("请输入至少一个课程。", "为用户添加课程失败");
+					return;
+				}
+				officialIdTI.text = officialIdTI.text.replace(/\s+/g, " "); //condense extra white spaces
+				officialIdTI.text = officialIdTI.text.replace(/(^\s*)|(\s*$)/g, ""); //remove white spaces at the beginning and the end
+				var candidates:Array = officialIdTI.text.split(" ");
+				var dispatched:Boolean;
+				var error:Boolean = false;
+				for each (var i:String in candidates)
+				{
+					dispatched = false;
+					for each (var c:Course in _model.selectedUser.courses)
+					{
+						if (c.officialId == i)
+						{
+							dispatched = true
+							error = true;
+							break;
+						}
+					}
+					if (!dispatched)
+					{
+						CairngormUtils.dispatchEvent(EventNames.ADD_USER_COURSE, i);
+					}
+				}
+				if (error)
+				{
+					Alert.show("有些课程已在该用户课程列表中。", "为用户 “" + _model.selectedUser.lastName + _model.selectedUser.firstName + "” 添加课程过程中出错");
+				}
+			}
+		]]>
+	</mx:Script>
+	<mx:StringValidator id="officialIdValidator" source="{officialIdTI}" property="text"
+	   required="true"/>
+	<mx:VBox width="100%" height="100%" horizontalAlign="center">
+		<mx:Text text="请在下面的文字框内输入要添加的课程的课程号(以空格或回车分隔多个号码)"/>
+		<mx:TextArea id="officialIdTI" width="100%" height="100%"/>
+		<mx:Button width="100%" height="25" label="提交" click="validateAndSubmit()"/>
+	</mx:VBox>
+</mx:TitleWindow>

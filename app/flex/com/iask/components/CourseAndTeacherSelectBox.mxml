@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VDividedBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+    xmlns:iask="com.iask.components.*">
+    <mx:Script>
+    	<![CDATA[
+    		import com.iask.model.IaskModelLocator;
+    		
+    		[Bindable]
+    		private var _model:IaskModelLocator = IaskModelLocator.getInstance();
+    	]]>
+    </mx:Script>
+	<iask:CourseSelectBox id="courseSelectBox" height="73%"/>
+	<iask:TeacherSelectBox id="teacherSelectBox" height="27%"/>
+</mx:VDividedBox>

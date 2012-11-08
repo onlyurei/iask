@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" verticalAlign="middle"
+		 xmlns:iask="com.iask.components.*">
+	<mx:Script>
+		<![CDATA[
+			import mx.charts.renderers.TriangleItemRenderer;
+			import com.iask.model.Course;
+			import com.iask.model.User;
+			import com.iask.model.IaskModelLocator;
+			import com.iask.util.CairngormUtils;
+			import com.iask.control.EventNames;
+			import mx.controls.Alert;
+			import mx.core.IFlexDisplayObject;
+			import mx.core.Application;
+			import mx.managers.PopUpManager;
+			
+			
+			[Bindable]
+			private var _model:IaskModelLocator = IaskModelLocator.getInstance();
+			
+			private function handleCourseSelectCBChange():void
+			{
+				_model.selectedCourse = Course(courseSelectCB.selectedItem);
+			}
+			
+			private function selectAll():void
+			{
+				searchTI.selectionBeginIndex = 0;
+				searchTI.selectionEndIndex = searchTI.text.length;
+			}
+			
+			private function handleListCourseKeywordsButtonClick():void
+    		{
+    			if (_model.selectedCourse.keywords == null && _model.selectedCourse != null && _model.selectedCourse != Course.NONE)
+    			{
+    				CairngormUtils.dispatchEvent(EventNames.LIST_COURSE_KEYWORDS, _model.selectedCourse);
+    			}
+				var keywordsWindow:IFlexDisplayObject = PopUpManager.createPopUp(Application.application.mainStack, CourseKeywordsListBox, true);
+    			keywordsWindow = CourseKeywordsListBox(keywordsWindow);
+    			var height:int = Application.application.mainStack.height * 0.9;
+    			keywordsWindow.height = height;
+    			PopUpManager.centerPopUp(keywordsWindow);
+    		}
+			
+			private function search():void
+			{
+				searchTI.text = searchTI.text.replace(/\s+/g, " "); //condense extra white spaces
+				searchTI.text = searchTI.text.replace(/(^\s*)|(\s*$)/g, ""); //remove white spaces at the beginning and the end
+				var keywords:String = searchTI.text.toLowerCase();
+				_model.searchKeywords = keywords;
+				var keywordsArray:Array = keywords.split(" ");
+				if (keywordsArray == null)
+				{
+					return;
+				}
+				if (keywordsArray.length == 0)
+				{
+					return;
+				}
+				if (keywordsArray.length > 20)
+				{
+					Alert.show("输入的关键词不能超过20个。", "查询失败");
+					return;
+				}
+				var keywordsAndCourse:Array = [];
+				keywordsAndCourse[0] = keywords;
+				keywordsAndCourse[1] = _model.selectedCourse;
+				CairngormUtils.dispatchEvent(EventNames.LIST_KEYWORD_ENTRIES, keywordsAndCourse);
+				_model.mainBoxTabState = IaskModelLocator.VIEWING_SEARCH_RESULT_TAB;
+			}
+		]]>
+	</mx:Script>
+	<mx:ComboBox width="42%" id="courseSelectCB" labelField="name"
+		dataProvider="{_model.courses}" change="handleCourseSelectCBChange()"
+	    prompt="查询前请先选择问题所属课程..." selectedItem="{_model.selectedCourse}" rowCount="20"/>
+	<mx:Button id="showCourseKeywordsButton" height="20" label="选择课程关键词..."
+		click="handleListCourseKeywordsButtonClick()"/>
+	<mx:TextInput width="58%" id="searchTI" text="{_model.selectedKeyword}" focusIn="selectAll()" 
+	    enabled="{searchButton.enabled}" enter="search()"/>
+	<mx:Button width="80" height="25" id="searchButton" label="查询" fontSize="13" click="search()"
+	    enabled="{(_model.selectedCourse == null || _model.selectedCourse == Course.NONE) ? false : true}"/>
+</mx:HBox>

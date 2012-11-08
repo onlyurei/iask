@@ -1,0 +1,23 @@
+<p>
+  <b>Course:</b>
+  <%=h @query.course_id %>
+</p>
+
+<p>
+  <b>Question:</b>
+  <%=h @query.question %>
+</p>
+
+<p>
+  <b>Solved:</b>
+  <%=h @query.solved %>
+</p>
+
+<p>
+  <b>Notes:</b>
+  <%=h @query.notes %>
+</p>
+
+
+<%= link_to 'Edit', edit_query_path(@query) %> |
+<%= link_to 'Back', queries_path %>

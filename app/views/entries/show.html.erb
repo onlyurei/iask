@@ -1,0 +1,28 @@
+<p>
+  <b>Course:</b>
+  <%=h @entry.course_id %>
+</p>
+
+<p>
+  <b>User:</b>
+  <%=h @entry.user_id %>
+</p>
+
+<p>
+  <b>Question:</b>
+  <%=h @entry.question %>
+</p>
+
+<p>
+  <b>Answer:</b>
+  <%=h @entry.answer %>
+</p>
+
+<p>
+  <b>Notes:</b>
+  <%=h @entry.notes %>
+</p>
+
+
+<%= link_to 'Edit', edit_entry_path(@entry) %> |
+<%= link_to 'Back', entries_path %>

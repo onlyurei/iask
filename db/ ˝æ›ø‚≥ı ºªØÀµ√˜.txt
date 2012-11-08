@@ -1,0 +1,39 @@
+本系统使用的数据库为MySQL（5.0及以上）。
+
+请在第一次使用本系统时在MySQL上执行本文件夹内的database_initialize.sql文件，它将建立本系统所需的数据库和数据库内的表（如果数据库和表存在的话它们将首先被删除），并将添加一个系统管理员帐户。
+
+执行该文件前，请将该文件头几行的 IDENTIFIED BY '123456' WITH GRANT OPTION; （共有3处）中的123456改为您的MySQL的root帐户的密码，并相应地更改源代码config文件夹下的database.yml文件中的password部分（未更改时同样为123456，也有3处）。
+
+如果您安装了MySQL GUI（例如SQLyog），您可打开该GUI程序，以root帐号登录MySQL的localhost，然后用该GUI程序打开database_initialize.sql文件，并执行该文件的全部SQL语句即可。
+
+
+系统管理员帐号
+用户名：administrator
+密码：veronica
+
+注意：
+1、执行databae_initialize.sql将首先删除已存在的本系统用到的数据库和表（如果它们存在的话），请在执行前慎重考虑和检查数据备份情况，以防误删系统之前的所有数据。
+2、基于安全考虑，请及时登录系统更改管理员初始密码。
+
+
+建立新管理员帐号的方法：
+用已有管理员帐号建立一个学生帐号。
+在iask_production数据库的user表里找到该条记录，并将is_admin改为1。
+
+删除管理员帐号的方法：
+在iask_production数据库的user表里找到要删除的管理员帐号对应的记录并删除。
+
+误将所有用户帐号删除的解决方法：
+在iask_production数据库上执行以下SQL语句
+insert  into `users`(`id`,`official_id`,`login`,`email`,`last_name`,`first_name`,`is_admin`,`is_teacher`,`entries_sum`,`comment`,`crypted_password`,`salt`,`created_at`,`updated_at`,`remember_token`,`remember_token_expires_at`) values (11341,'000000','administrator','admin@iask.com',NULL,NULL,1,0,0,NULL,'1dd4a8ec9f8a8a27f19de60313eba743e8bae69a','6f21194112d20f4f3f22ceeda395382b9e003dc9','2008-05-23 14:33:17','2008-05-23 14:33:18',NULL,NULL);
+
+这将重新建立一个系统管理员帐号。
+用户名：administrator
+密码：veronica
+
+
+
+Ken
+2008-06-01
+
+fancheng33@hotmail.com

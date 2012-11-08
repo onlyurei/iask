@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" width="600" height="{this.parent.height}"
+	title="为用户“{_model.selectedUser.lastName} {_model.selectedUser.firstName}”添加课程 (按住ctrl或shift键可多选)" showCloseButton="true" close="handleTitleWindowClose(event)">
+	<mx:Script>
+		<![CDATA[
+			import com.iask.model.IaskModelLocator;
+			import com.iask.model.Course;
+			import com.iask.control.EventNames;
+			import com.iask.util.CairngormUtils;
+			import mx.controls.Alert;
+			import mx.validators.Validator;
+			import mx.events.CloseEvent;
+            import mx.managers.PopUpManager;
+            import mx.collections.ArrayCollection;
+
+
+			[Bindable]
+			private var _model:IaskModelLocator = IaskModelLocator.getInstance();
+			
+			[Bindable]
+			private var _listCourses:String = "查看课程列表";
+			
+			[Bindable]
+			private var _refreshCourses:String = "刷新课程列表";
+
+            private function handleTitleWindowClose(evt:CloseEvent):void 
+            {
+                PopUpManager.removePopUp(this);
+            }
+            
+            private function getRowNum(oItem:Object,iCol:int):String
+    		{
+    			var index:int = (coursesDG.dataProvider as ArrayCollection).getItemIndex(oItem) + 1;
+    			return index.toString();
+    		}
+            
+            private function listCourses():void
+    		{
+    			CairngormUtils.dispatchEvent(EventNames.LIST_ALL_COURSES);
+    		}
+            
+			private function validateAndSubmit():void
+			{
+				var candidates:Array = coursesDG.selectedItems;
+				var dispatched:Boolean;
+				var error:Boolean = false;
+				for each (var i:Course in candidates)
+				{
+					dispatched = false;
+					for each (var c:Course in _model.selectedUser.courses)
+					{
+						if (c.officialId == i.officialId)
+						{
+							dispatched = true
+							error = true;
+							break;
+						}
+					}
+					if (!dispatched)
+					{
+						CairngormUtils.dispatchEvent(EventNames.ADD_USER_COURSE, i.officialId);
+					}
+				}
+				if (error)
+				{
+					Alert.show("有些课程已在该用户课程列表中。", "为用户 “" + _model.selectedUser.lastName + _model.selectedUser.firstName + "” 添加课程过程中出错");
+				}
+			}
+		]]>
+	</mx:Script>
+	<mx:VBox width="100%" height="100%" horizontalAlign="center">
+		<mx:Button height="20" label="{_model.courses == null ? _listCourses : _refreshCourses}" click="listCourses()" 
+			width="200"/>
+		<mx:DataGrid id="coursesDG" width="100%" height="100%" dataProvider="{_model.courses}" rowHeight="24" 
+			allowMultipleSelection="true">
+			<mx:columns>
+				<mx:DataGridColumn labelFunction="getRowNum" width="23" editable="false"
+					sortable="false" draggable="false" textAlign="center"
+					paddingLeft="0" paddingRight="0"/>
+				<mx:DataGridColumn headerText="课程编号" dataField="officialId" width="88"/>
+				<mx:DataGridColumn headerText="课程名" dataField="name"/>
+				<mx:DataGridColumn headerText="课程描述" dataField="description"/>
+				<mx:DataGridColumn headerText="备注" dataField="notes" width="66"/>
+			</mx:columns>
+		</mx:DataGrid>
+		<mx:Button width="100%" height="25" click="validateAndSubmit()"
+			label="添加所选课程到用户“{_model.selectedUser.lastName} {_model.selectedUser.firstName}”的课程列表中"
+			enabled="{coursesDG.selectedItem != null}"/>
+	</mx:VBox>
+</mx:TitleWindow>

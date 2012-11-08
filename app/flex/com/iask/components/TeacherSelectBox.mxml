@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Panel xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" title="筛选答疑教师">
+	<mx:Script>
+		<![CDATA[
+			import com.iask.model.IaskModelLocator;
+			import com.iask.model.User;
+			import com.iask.util.CairngormUtils;
+			import com.iask.control.EventNames;
+			import mx.core.Application;
+			
+			[Bindable]
+			private var _model:IaskModelLocator = IaskModelLocator.getInstance();
+			
+			private function labelToShow(item:Object):String
+			{
+				return item.lastName + item.firstName + " 老师";
+			}
+			
+			private function handleTeacherListChange():void
+			{
+				_model.selectedTeacher = User(teachersList.selectedItem);
+			}
+		]]>
+	</mx:Script>
+	<mx:List id="teachersList" dataProvider="{_model.selectedCourse.teachers}" 
+		labelFunction="labelToShow" width="100%" height="100%" maxWidth="230" rowHeight="24"
+		selectedItem="{_model.selectedTeacher}" change="handleTeacherListChange()" />
+</mx:Panel>

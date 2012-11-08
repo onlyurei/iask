@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Panel xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" width="100%" height="100%"
+    title="欢迎使用iAsk自主式答疑系统">
+    <mx:Script>
+    	<![CDATA[
+    		import com.iask.model.IaskModelLocator;
+    		import com.iask.control.EventNames;
+    		import com.iask.util.CairngormUtils;
+    		import mx.managers.PopUpManager;
+			import mx.core.IFlexDisplayObject;
+			import mx.core.Application;
+    		
+    		[Bindable]
+    		private var _model:IaskModelLocator = IaskModelLocator.getInstance();
+    		
+    		private function handleLogoutButtonClick():void
+    		{
+    			logoutButton.enabled = false;
+    			logoutButton.label = "注销中...";
+    			CairngormUtils.dispatchEvent(EventNames.LOG_OUT);
+    		}
+    		
+    		private function popUpPasswordBox():void
+    		{
+    			var passwordWindow:IFlexDisplayObject = PopUpManager.createPopUp(Application.application.mainStack, PasswordBox, true);
+    			PopUpManager.centerPopUp(passwordWindow);
+    		}
+    	]]>
+    </mx:Script>
+    <mx:VBox width="100%" height="100%" maxWidth="230" horizontalAlign="center">
+    	<mx:Spacer/>
+    	<mx:Label text="{_model.user.lastName}{_model.user.firstName}同学，您好！"/>
+	    <mx:Label text="到目前为止您共提交了 {_model.user.entriesSum.toString()} 个问题"/>
+    	<mx:HBox width="100%" horizontalAlign="center">
+    		<mx:Button label="修改帐户..." height="20" width="88" id="profileButton" click="popUpPasswordBox()"/>
+    		<mx:Button label="注销" width="88" height="20" id="logoutButton" click="handleLogoutButtonClick()"/>
+    	</mx:HBox>
+    </mx:VBox>
+</mx:Panel>

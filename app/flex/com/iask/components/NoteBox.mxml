@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+	xmlns:iask="com.iask.components.*" label="笔记簿">
+	<mx:Script>
+		<![CDATA[
+			import com.iask.model.Note;
+			import com.iask.model.IaskModelLocator;
+			import com.iask.control.EventNames;
+			import com.iask.util.CairngormUtils;
+			import mx.controls.Alert;
+			import mx.validators.Validator;
+			import mx.managers.PopUpManager;
+			import mx.core.IFlexDisplayObject;
+			import mx.core.Application;
+			import mx.collections.ArrayCollection;
+			
+			[Bindable]
+			private var _model:IaskModelLocator = IaskModelLocator.getInstance();
+			
+			[Bindable]
+			private var _listNotes:String = "查看笔记列表";
+			
+			[Bindable]
+			private var _refreshNotes:String = "刷新笔记列表";
+			
+			private function getRowNum(oItem:Object,iCol:int):String
+    		{
+    			var index:int = (notesDG.dataProvider as ArrayCollection).getItemIndex(oItem) + 1;
+    			return index.toString();
+    		}
+    		
+    		public function deleteNote(note:Note):void
+    		{
+    			CairngormUtils.dispatchEvent(EventNames.DESTROY_NOTE, note);
+    		}
+    		
+    		private function setRTEText():void
+    		{
+    			contentTI.htmlText = (notesDG.selectedItem != null ? notesDG.selectedItem.content : "");
+    		}
+    		
+    		private function popUpNoteSubmitBox():void
+    		{
+    			var noteWindow:IFlexDisplayObject = PopUpManager.createPopUp(Application.application.mainStack, NoteSubmitBox);
+    			PopUpManager.centerPopUp(noteWindow);
+    		}
+    		
+    		private function popUpDetailBox():void
+    		{
+    			var detailWindow:IFlexDisplayObject = PopUpManager.createPopUp(Application.application.mainStack, ViewDetailBox);
+    			PopUpManager.centerPopUp(detailWindow);
+    			var detailComponent:ViewDetailBox = ViewDetailBox(detailWindow);
+    			detailComponent.title = "查看笔记内容";
+    			detailComponent.detailTI.htmlText = notesDG.selectedItem.content;
+    		}
+    		
+    		private function listNotes():void
+    		{
+    			CairngormUtils.dispatchEvent(EventNames.LIST_NOTES);
+    		}
+    		
+    		private function validateAndSubmit():void
+			{
+				contentValidator.enabled = true;
+				var results:Array = Validator.validateAll(
+				[contentValidator]);
+				if (results.length > 0)
+				{
+					Alert.show("请输入笔记内容。", "更新笔记失败");
+					return;
+				}
+				var note:Note = Note(notesDG.selectedItem);
+				note.content = contentTI.htmlText;
+				CairngormUtils.dispatchEvent(EventNames.UPDATE_NOTE, note);
+			}
+		]]>
+	</mx:Script>
+	<mx:StringValidator id="contentValidator" source="{contentTI}" property="text"
+	   required="true" enabled="{contentTI.enabled}"/>
+	<mx:HDividedBox width="100%" height="100%">
+		<mx:VBox width="38%" height="100%" horizontalAlign="center">
+			<mx:Button height="20" label="{_model.notes == null ? _listNotes : _refreshNotes}" click="listNotes()" width="200"/>
+			<mx:DataGrid id="notesDG" width="100%" height="100%" dataProvider="{_model.notes}" rowHeight="24" change="setRTEText()"
+			    doubleClickEnabled="{notesDG.selectedItem != null}" doubleClick="popUpDetailBox()">
+				<mx:columns>
+					<mx:DataGridColumn labelFunction="getRowNum" width="23" editable="false"
+						sortable="false" draggable="false" textAlign="center"
+						paddingLeft="0" paddingRight="0"/>
+					<mx:DataGridColumn headerText="笔记" dataField="content">
+						<mx:itemRenderer>
+							<mx:Component>
+								<mx:Text selectable="false">
+									<mx:htmlText>
+										{data.content}
+									</mx:htmlText>
+								</mx:Text>
+							</mx:Component>
+						</mx:itemRenderer>
+					</mx:DataGridColumn>
+				</mx:columns>
+			</mx:DataGrid>
+		</mx:VBox>
+		<mx:VBox width="62%" height="100%">
+			<mx:HBox horizontalAlign="right" width="100%">
+				<mx:Button id="createNoteButton" label="新建笔记..." height="20" width="100" click="popUpNoteSubmitBox()"/>
+			</mx:HBox>
+			<mx:RichTextEditor id="contentTI" doubleClickEnabled="{notesDG.selectedItem != null}" doubleClick="popUpDetailBox()"
+			    enabled="{notesDG.selectedItem != null}"
+			    htmlText="{notesDG.selectedItem.content}"
+			    title="笔记内容" width="100%" height="100%"
+			    showControlBar="false"
+			    focusIn="contentTI.showControlBar = true;"
+                focusOut="contentTI.showControlBar = false;"/>
+            <mx:HBox width="100%">
+            	<mx:Button id="updateButton" label="更新" width="100%" height="25"
+			    	click="validateAndSubmit()"
+			   		enabled="{notesDG.selectedItem != null}"/>
+				<mx:Button id="deleteButton" label="删除" height="25" width="60" toolTip="单击即删除此笔记"
+			    	click="deleteNote(Note(notesDG.selectedItem))"
+			    	enabled="{notesDG.selectedItem != null}" 
+			    	textRollOverColor="#ff0000"/>
+            </mx:HBox>
+		</mx:VBox>
+	</mx:HDividedBox>
+</mx:VBox>

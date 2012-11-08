@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" width="350" height="360" xmlns:cpv="com.iask.validators.*"
+	title="修改用户“{_model.selectedUser.lastName} {_model.selectedUser.firstName}”" showCloseButton="true" close="handleTitleWindowClose(event)">
+	<mx:Script>
+		<![CDATA[
+			import com.iask.validators.ServerErrors;
+			import mx.controls.Alert;
+			import mx.events.ValidationResultEvent;
+			import mx.validators.Validator;
+			import com.iask.control.EventNames;
+			import com.iask.model.IaskModelLocator;
+			import com.iask.model.User;
+			import com.iask.util.CairngormUtils;
+			import mx.managers.CursorManager;
+			import mx.events.CloseEvent;
+            import mx.managers.PopUpManager;
+			
+			[Bindable]
+			private var _model:IaskModelLocator = IaskModelLocator.getInstance();
+			
+			private function handleTitleWindowClose(evt:CloseEvent):void 
+            {
+                PopUpManager.removePopUp(this);
+            }
+			
+			private function validateAndSubmit():void
+			{
+				passwordValidator.enabled = true;
+				passwordConfirmationValidator.enabled = true;
+				var results:Array = Validator.validateAll(
+				[officialIdValidator, usernameValidator, emailValidator, lastNameValidator, firstNameValidator,
+				 passwordValidator, passwordConfirmationValidator]);
+				if (results.length > 0)
+				{
+					Alert.show("请改正表单上用红色线框标出的错误。", "修改用户失败");
+					return;
+				}
+				var user:User = new User();
+				user.officialId = officialIdTI.text;
+				user.login = loginTI.text;
+				user.email = emailTI.text;
+				user.lastName = lastNameTI.text;
+				user.firstName = firstNameTI.text;
+				user.isTeacher = isTeacherCB.selected;
+				user.password = passwordTI.text;
+				user.id = _model.selectedUser.id;
+				passwordValidator.enabled = false;
+				passwordConfirmationValidator.enabled = false;
+				passwordTI.text = "";
+				confirmPasswordTI.text = "";
+			    CairngormUtils.dispatchEvent(EventNames.UPDATE_USER, user);
+			}
+		]]>
+	</mx:Script>
+	<mx:StringValidator id="officialIdValidator" source="{officialIdTI}" property="text"
+	   required="true" minLength="3" maxLength="40" />
+	<mx:EmailValidator id="emailValidator" source="{emailTI}" property="text"/>
+	<mx:StringValidator id="usernameValidator" source="{loginTI}" property="text"
+	   required="true" minLength="3" maxLength="80" />
+	<mx:StringValidator id="lastNameValidator" source="{lastNameTI}" property="text"
+	   required="true" minLength="1" maxLength="80" />
+	<mx:StringValidator id="firstNameValidator" source="{firstNameTI}" property="text"
+	   required="true" minLength="1" maxLength="80" />
+	<mx:StringValidator id="passwordValidator" source="{passwordTI}" property="text"
+	   required="true" minLength="4" maxLength="40" />
+	<cpv:PasswordConfirmationValidator id="passwordConfirmationValidator"
+	   password="{passwordTI.text}" source="{confirmPasswordTI}" 
+	   property="text" required="true"/>
+	<cpv:ServerErrorValidator id="officialIdSV" field="official_id" listener="{officialIdTI}" 
+		serverErrors="{_model.accountCreateErrors}"/>
+	<cpv:ServerErrorValidator id="loginSV" field="login" listener="{loginTI}" 
+		serverErrors="{_model.accountCreateErrors}"/>
+	<cpv:ServerErrorValidator id="emailSV" field="email" listener="{emailTI}" 
+		serverErrors="{_model.accountCreateErrors}"/>
+	<cpv:ServerErrorValidator id="lastNameSV" field="last_name" listener="{lastNameTI}" 
+		serverErrors="{_model.accountCreateErrors}"/>
+	<cpv:ServerErrorValidator id="firstNameSV" field="first_name" listener="{firstNameTI}" 
+		serverErrors="{_model.accountCreateErrors}"/>
+	<cpv:ServerErrorValidator id="passwordSV" field="password" listener="{passwordTI}" 
+		serverErrors="{_model.accountCreateErrors}"/>
+	<cpv:ServerErrorValidator id="passwordConfirmationSV" field="password_confirmation" 
+		listener="{confirmPasswordTI}" serverErrors="{_model.accountCreateErrors}"/>
+	<mx:Form labelWidth="80">
+		<mx:FormItem required="true" label="学工号">
+			<mx:TextInput id="officialIdTI" text="{_model.selectedUser.officialId}"/>
+		</mx:FormItem>
+		<mx:FormItem required="true" label="用户名">
+			<mx:TextInput id="loginTI" text="{_model.selectedUser.login}"/>
+		</mx:FormItem>
+		<mx:FormItem required="true" label="重置密码">
+			<mx:TextInput id="passwordTI" displayAsPassword="true"/>
+		</mx:FormItem>
+		<mx:FormItem required="true" label="确认重置密码">
+			<mx:TextInput id="confirmPasswordTI" displayAsPassword="true" enter="validateAndSubmit()"/>
+		</mx:FormItem>
+		<mx:FormItem required="true" label="电子邮件">
+			<mx:TextInput id="emailTI" text="{_model.selectedUser.email}"/>
+		</mx:FormItem>
+		<mx:FormItem required="true" label="姓氏">
+			<mx:TextInput id="lastNameTI" text="{_model.selectedUser.lastName}"/>
+		</mx:FormItem>
+		<mx:FormItem required="true" label="名字">
+			<mx:TextInput id="firstNameTI" text="{_model.selectedUser.firstName}"/>
+		</mx:FormItem>
+		<mx:FormItem>
+			<mx:CheckBox id="isTeacherCB" label="教师" selected="{_model.selectedUser.isTeacher}"/>
+		</mx:FormItem>
+		<mx:FormItem>
+			<mx:Button id="updateAccountButton" label="提交"
+				click="validateAndSubmit()" width="160" height="25"/>
+		</mx:FormItem>
+	</mx:Form>
+</mx:TitleWindow>

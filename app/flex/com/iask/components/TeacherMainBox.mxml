@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" 
+	xmlns:iask="com.iask.components.*" creationPolicy="all"
+    minWidth="1000" minHeight="600" 
+    paddingLeft="5" paddingRight="5" paddingTop="5" paddingBottom="5">
+    <mx:Script>
+    	<![CDATA[
+    		import mx.core.Container;
+    		import com.iask.model.IaskModelLocator;
+    		
+    		[Bindable]
+    		private var _model:IaskModelLocator = IaskModelLocator.getInstance();
+    		
+    		private function controlTabToShow(tabState:int):Container
+		    {
+		    	if (tabState == IaskModelLocator.VIEWING_TEACHER_MAIN_BOX_QUERY_HISTORY_TAB)
+		    	{
+		    		return teacherQueryHistoryTab;
+		    	}
+		    	else if (tabState == IaskModelLocator.VIEWING_TEACHER_MAIN_BOX_ENTRY_SUBMIT_TAB)
+		    	{
+		    		return entrySubmitTab;
+		    	}
+		    	else if (tabState == IaskModelLocator.VIEWING_SEARCH_RESULT_TAB)
+		    	{
+		    		return searchResultTab;
+		    	}
+		    	else if (tabState == IaskModelLocator.VIEWING_TEACHER_MAIN_BOX_NOTE_TAB)
+		    	{
+		    		return noteTab;
+		    	}
+		    	else
+		    	{
+		    		return teacherQueryHistoryTab;
+		    	}
+		    }
+		    
+		    private function handleTabNavigatorChange():void
+		    {
+		    	if (tabNavigator.selectedChild == teacherQueryHistoryTab)
+		    	{
+		    		_model.mainBoxTabState = IaskModelLocator.VIEWING_TEACHER_MAIN_BOX_QUERY_HISTORY_TAB;
+		    	}
+		    	else if (tabNavigator.selectedChild == entrySubmitTab)
+		    	{
+		    		_model.mainBoxTabState = IaskModelLocator.VIEWING_TEACHER_MAIN_BOX_ENTRY_SUBMIT_TAB;
+		    	}
+		    	else if (tabNavigator.selectedChild == searchResultTab)
+		    	{
+		    		_model.mainBoxTabState = IaskModelLocator.VIEWING_SEARCH_RESULT_TAB;
+		    	}
+		    	else if (tabNavigator.selectedChild == noteTab)
+		    	{
+		    		_model.mainBoxTabState = IaskModelLocator.VIEWING_TEACHER_MAIN_BOX_NOTE_TAB;
+		    	}
+		    }
+    	]]>
+    </mx:Script>
+	<mx:VBox width="230" height="100%">
+		<mx:Image source="com/iask/assets/logo.png"/>
+		<iask:TeacherWelcomeBox id="teacherWelcomeBox" height="120"/>
+		<iask:CourseAndTeacherSelectBox id="courseAndTeacherSelectBox" height="100%"/>
+	</mx:VBox>
+	<mx:VBox width="100%" height="100%">
+		<iask:SearchBox width="100%"/>
+		<mx:TabNavigator width="100%" height="100%" id="tabNavigator"
+			selectedChild="{controlTabToShow(_model.mainBoxTabState)}"
+			change="handleTabNavigatorChange()">
+			<iask:TeacherQueryHistoryBox id="teacherQueryHistoryTab"/>
+			<iask:EntrySubmitBox id="entrySubmitTab"/>
+			<iask:TeacherSearchResultBox id="searchResultTab"/>
+			<iask:NoteBox id="noteTab"/>
+		</mx:TabNavigator>
+	</mx:VBox>
+</mx:HBox>

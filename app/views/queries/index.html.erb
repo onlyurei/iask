@@ -1,0 +1,26 @@
+<h1>Listing queries</h1>
+
+<table>
+  <tr>
+    <th>Course</th>
+    <th>Question</th>
+    <th>Solved</th>
+    <th>Notes</th>
+  </tr>
+
+<% for query in @queries %>
+  <tr>
+    <td><%=h query.course_id %></td>
+    <td><%=h query.question %></td>
+    <td><%=h query.solved %></td>
+    <td><%=h query.notes %></td>
+    <td><%= link_to 'Show', query %></td>
+    <td><%= link_to 'Edit', edit_query_path(query) %></td>
+    <td><%= link_to 'Destroy', query, :confirm => 'Are you sure?', :method => :delete %></td>
+  </tr>
+<% end %>
+</table>
+
+<br />
+
+<%= link_to 'New query', new_query_path %>

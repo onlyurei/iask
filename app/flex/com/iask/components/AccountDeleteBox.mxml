@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" width="350" height="160"
+	title="批量删除用户" showCloseButton="true" close="handleTitleWindowClose(event)" horizontalAlign="center">
+	<mx:Script>
+		<![CDATA[
+			import com.iask.validators.ServerErrors;
+			import mx.controls.Alert;
+			import mx.events.ValidationResultEvent;
+			import mx.validators.Validator;
+			import com.iask.control.EventNames;
+			import com.iask.model.IaskModelLocator;
+			import com.iask.model.User;
+			import com.iask.util.CairngormUtils;
+			import mx.managers.CursorManager;
+			import mx.events.CloseEvent;
+            import mx.managers.PopUpManager;
+			
+			[Bindable]
+			private var _model:IaskModelLocator = IaskModelLocator.getInstance();
+			
+			private function handleTitleWindowClose(evt:CloseEvent):void 
+            {
+                PopUpManager.removePopUp(this);
+            }
+			
+			private function confirmDelete():void
+    		{
+    			Alert.show("您确定要删除这些用户吗 (此操作不可撤销)？删除后，属于这些用户的课程问题库条目和/或提问也都将被删除，这些用户的课程列表也将被删除。", 
+					"确认批量删除用户（慎重！）", Alert.NO|Alert.YES, this, deleteUsers, null, Alert.NO);
+    		}
+    		
+    		private function deleteUsers(event:CloseEvent):void
+			{
+				if (event.detail == Alert.YES)
+				{
+					if (startTI.text == "" || endTI.text == "")
+					{
+						Alert.show("起始和终止学工号都必须输入。\n例如：\n起始学工号：040648\n终止学工号：040699", "批量删除用户失败");
+						return;
+					}
+					if (startTI.text.length != endTI.text.length)
+					{
+						Alert.show("起始学工号与终止学工号的位数必须相同。", "批量删除用户失败");
+						return;
+					}
+					var digits:String = "0123456789";
+					var isDigit:Boolean;
+					var i:int;
+					var j:int;
+					for(i = 0; i < startTI.text.length; i++)
+					{
+						isDigit = false;
+						for (j = 0; j <= 9; j++)
+						{
+							if (startTI.text.charAt(i) == digits.charAt(j))
+							{
+								isDigit = true;
+								break;
+							}
+						}
+						if (!isDigit)
+						{
+							Alert.show("起始学工号中包含非数字的字符。", "批量删除用户失败");
+							return;
+						}
+					}
+					for(i = 0; i < endTI.text.length; i++)
+					{
+						isDigit = false;
+						for (j = 0; j <= 9; j++)
+						{
+							if (endTI.text.charAt(i) == digits.charAt(j))
+							{
+								isDigit = true;
+								break;
+							}
+						}
+						if (!isDigit)
+						{
+							Alert.show("终止学工号中包含非数字的字符。", "批量删除用户失败");
+							return;
+						}
+					}
+					var numLength:int = startTI.text.length;
+					var startNumString:String = "";
+					var endNumString:String = "";
+					var startNum:int;
+					var endNum:int;
+					var foundBegin:Boolean = false;
+					for (i = 0; i < startTI.text.length; i++)
+					{
+						if (!foundBegin)
+						{
+							if (startTI.text.charAt(i) != "0")
+							{
+								foundBegin = true;
+							}
+							else
+							{
+								continue;
+							}
+						}
+						startNumString += startTI.text.charAt(i);
+					}
+					foundBegin = false;
+					for (i = 0; i < endTI.text.length; i++)
+					{
+						if (!foundBegin)
+						{
+							if (endTI.text.charAt(i) != "0")
+							{
+								foundBegin = true;
+							}
+							else
+							{
+								continue;
+							}
+						}
+						endNumString += endTI.text.charAt(i);
+					}
+					startNum = int(startNumString);
+					endNum = int(endNumString);
+					if (endNum < startNum)
+					{
+						Alert.show("终止学工号必须大于或等于起始学工号。", "批量删除用户失败");
+						return;
+					}
+					var diff:int;
+					diff = endNum - startNum + 1;
+					if (diff > 2000)
+					{
+						Alert.show("一次最多能批量删除2000个用户。", "批量删除用户失败");
+						return;
+					}
+					var officialId:String = "";
+					var officialIdEnd:String = "";
+					var k:int;
+					for (i = startNum; i <= endNum; i++)
+					{
+						officialId = "";
+						officialIdEnd = i.toString();
+						diff = numLength - officialIdEnd.length;
+						for (k = 1; k <= diff; k++)
+						{
+							officialId += "0";
+						}
+						officialId += officialIdEnd;
+						CairngormUtils.dispatchEvent(EventNames.DESTROY_USER_BY_OFFICIAL_ID, officialId);
+					}
+				}
+			}
+		]]>
+	</mx:Script>
+	<mx:Form labelWidth="80">
+		<mx:FormItem required="true" label="起始学工号">
+			<mx:TextInput id="startTI"/>
+		</mx:FormItem>
+		<mx:FormItem required="true" label="终止学工号">
+			<mx:TextInput id="endTI"/>
+		</mx:FormItem>
+		<mx:FormItem>
+			<mx:Button id="createAccountButton" label="批量删除用户" color="#ff0000"
+				 toolTip="这一功能将批量删除从指定的起始学工号到终止学工所对应的用户（例如：从040648到040699，学工号必须只包含数字，并且起始和终止学工号的位数要相同），请慎用！"
+				click="confirmDelete()" width="160" height="25"/>
+		</mx:FormItem>
+	</mx:Form>
+</mx:TitleWindow>

@@ -1,0 +1,26 @@
+<h1>Listing keywords</h1>
+
+<table>
+  <tr>
+    <th>Entry</th>
+    <th>Value</th>
+    <th>Relevance</th>
+    <th>Notes</th>
+  </tr>
+
+<% for keyword in @keywords %>
+  <tr>
+    <td><%=h keyword.entry_id %></td>
+    <td><%=h keyword.value %></td>
+    <td><%=h keyword.relevance %></td>
+    <td><%=h keyword.notes %></td>
+    <td><%= link_to 'Show', keyword %></td>
+    <td><%= link_to 'Edit', edit_keyword_path(keyword) %></td>
+    <td><%= link_to 'Destroy', keyword, :confirm => 'Are you sure?', :method => :delete %></td>
+  </tr>
+<% end %>
+</table>
+
+<br />
+
+<%= link_to 'New keyword', new_keyword_path %>

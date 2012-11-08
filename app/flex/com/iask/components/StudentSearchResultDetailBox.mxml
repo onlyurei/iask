@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%">
+	<mx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			import com.iask.model.Course;
+			import com.iask.model.Entry;
+			import com.iask.model.Keyword;
+			import com.iask.model.IaskModelLocator;
+			import com.iask.util.CairngormUtils;
+			import com.iask.control.EventNames;
+			import mx.validators.Validator;
+			import mx.controls.Alert;
+			import mx.managers.CursorManager;
+			import mx.managers.PopUpManager;
+			import mx.core.IFlexDisplayObject;
+			import mx.core.Application;
+			import com.iask.components.QuerySubmitBox;
+
+			[Bindable]
+			private var _model:IaskModelLocator = IaskModelLocator.getInstance();
+		
+			private function handleKeywordsDGChange():void
+			{
+				_model.selectedKeyword = "";
+				for each (var i:Keyword in keywordsDG.selectedItems)
+				{
+					_model.selectedKeyword += i.value + " ";
+				}
+			}
+			
+			private function popUpDetailBox():void
+    		{
+    			var detailWindow:IFlexDisplayObject = PopUpManager.createPopUp(Application.application.mainStack, ViewDetailBox);
+    			PopUpManager.centerPopUp(detailWindow);
+    			var detailComponent:ViewDetailBox = ViewDetailBox(detailWindow);
+    			detailComponent.title = _model.selectedEntry.question;
+    			detailComponent.detailTI.htmlText = _model.selectedEntry.answer;
+    		}
+			
+			private function getRowNum(oItem:Object,iCol:int):String
+    		{
+    			var index:int = (keywordsDG.dataProvider as ArrayCollection).getItemIndex(oItem) + 1;
+    			return index.toString();
+    		}
+    		
+    		private function popUpQuerySubmitBox():void
+    		{
+    			var queryWindow:IFlexDisplayObject = PopUpManager.createPopUp(Application.application.studentMainBox, QuerySubmitBox);
+    			PopUpManager.centerPopUp(queryWindow);
+    		}
+		]]>
+	</mx:Script>
+	<mx:VDividedBox width="100%" height="100%">
+		<mx:VBox width="100%" height="80%">
+			<mx:HBox width="100%" horizontalAlign="right">
+				<mx:Button width="100" height="20" label="提交新问题..."
+					enabled="{_model.selectedCourse != null}" click="popUpQuerySubmitBox()" color="#ff9900"
+				    toolTip="提问之前，请先点击系统左侧课程列表查看该课程的问题库，确认没有您想要的答案后再提问。"/>
+			</mx:HBox>
+			<mx:HBox width="100%" maxWidth="{this.width}">
+				<mx:Text text="标题：{_model.selectedEntry.question}" maxWidth="{this.width}"/>
+			</mx:HBox>
+			<mx:Panel width="100%" height="100%" title="解答">
+				<mx:TextArea width="100%" height="100%" id="answerTI" editable="false"
+					doubleClickEnabled="{_model.selectedEntry != null}" doubleClick="popUpDetailBox()"
+		        	htmlText="{_model.selectedEntry.answer}" enabled="{_model.selectedEntry != null}"/>
+			</mx:Panel>
+		</mx:VBox>
+		<mx:VBox width="100%" height="20%">
+			<mx:Text text="(解答者：{_model.selectedEntry.userLastName} {_model.selectedEntry.userFirstName} 老师)"/>
+			<mx:DataGrid height="100%" width="100%" id="keywordsDG" change="handleKeywordsDGChange()"
+			dataProvider="{_model.selectedEntry.keywords}" allowMultipleSelection="true" rowHeight="24">
+				<mx:columns>
+					<mx:DataGridColumn headerText="关键词" dataField="value"/>
+					<mx:DataGridColumn headerText="相对于本条目的关联度" dataField="relevance"/>
+				</mx:columns>
+		    </mx:DataGrid>
+		</mx:VBox>
+	</mx:VDividedBox>
+</mx:VBox>

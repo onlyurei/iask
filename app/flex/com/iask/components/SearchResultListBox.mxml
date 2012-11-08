@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" horizontalAlign="center">
+	<mx:Script>
+		<![CDATA[
+			import com.iask.model.IaskModelLocator;
+			import com.iask.model.Course;
+			import com.iask.model.Entry;
+			import com.iask.util.CairngormUtils;
+			import com.iask.control.EventNames;
+			import mx.collections.ListCollectionView;
+			import mx.collections.ArrayCollection;
+			import mx.core.IFlexDisplayObject;
+			import mx.core.Application;
+			import mx.managers.PopUpManager;
+			
+			[Bindable]
+			private var _model:IaskModelLocator = IaskModelLocator.getInstance();
+			
+			private function getRowNum(oItem:Object,iCol:int):String
+    		{
+    			var index:int = (entriesDG.dataProvider as ArrayCollection).getItemIndex(oItem) + 1;
+    			return index.toString();
+    		}
+    		
+    		private function handleEntriesDGChange():void
+    		{
+    			_model.selectedEntry = Entry(entriesDG.selectedItem);
+    			if (_model.selectedEntry != null)
+    			{
+    				if (_model.selectedEntry.keywords == null)
+    				{
+    					CairngormUtils.dispatchEvent(EventNames.LIST_ENTRY_KEYWORDS, _model.selectedEntry);
+    				}
+    			}
+    		}
+    		
+    		private function handleRefreshCourseEntiresButtonClick():void
+    		{
+    			_model.courseListSelectedItem = _model.selectedCourse;
+    			CairngormUtils.dispatchEvent(EventNames.LIST_COURSE_ENTRIES, _model.selectedCourse);
+    			if (_model.courseListSelectedItem != null)
+    			{
+    				_model.searchResultListRefreshButtonLabel = "刷新此课程问题库";
+    			}
+    			_model.searchKeywords = "";
+    		}
+    		
+    		private function popUpDetailBox():void
+    		{
+    			var detailWindow:IFlexDisplayObject = PopUpManager.createPopUp(Application.application.mainStack, ViewDetailBox);
+    			PopUpManager.centerPopUp(detailWindow);
+    			var detailComponent:ViewDetailBox = ViewDetailBox(detailWindow);
+    			detailComponent.title = entriesDG.selectedItem.question;
+    			detailComponent.detailTI.htmlText = entriesDG.selectedItem.answer;
+    		}
+		]]>
+	</mx:Script>
+	<mx:Button id="refreshCourseEntiresButton" height="20" label="{_model.searchResultListRefreshButtonLabel}"
+		enabled="{(_model.selectedCourse == Course.NONE || _model.selectedCourse == null) ? false : true}" click="handleRefreshCourseEntiresButtonClick()"/>
+	<mx:DataGrid id="entriesDG" width="100%" height="100%" dataProvider="{_model.selectedCourse.entries}" 
+		change="handleEntriesDGChange()" rowHeight="24" doubleClickEnabled="{entriesDG.selectedItem != null}" doubleClick="popUpDetailBox()">
+		<mx:columns>
+			<mx:DataGridColumn labelFunction="getRowNum" width="23" editable="false"
+				sortable="false" draggable="false" textAlign="center"
+				paddingLeft="0" paddingRight="0"/>
+			<mx:DataGridColumn id="entry" headerText="“{_model.selectedCourse.name}” ({_model.selectedTeacher.lastName}{_model.selectedTeacher.firstName} 老师)" 
+				dataField="question"/>
+		</mx:columns>
+	</mx:DataGrid>
+</mx:VBox>

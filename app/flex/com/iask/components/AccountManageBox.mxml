@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" label="用户管理     " creationComplete="initApp()">
+	<mx:Script>
+		<![CDATA[
+			import com.iask.model.IaskModelLocator;
+			import com.iask.model.Course;
+			import com.iask.model.User;
+			import com.iask.util.CairngormUtils;
+			import com.iask.control.EventNames;
+			import mx.collections.ArrayCollection;
+			import mx.managers.PopUpManager;
+			import mx.core.IFlexDisplayObject;
+			import mx.core.Application;
+			import mx.events.CloseEvent;
+			import mx.controls.Alert;
+			
+			[Bindable]
+			private var _model:IaskModelLocator = IaskModelLocator.getInstance();
+			
+			[Bindable]
+			private var _listTeachers:String = "查看教师列表";
+			
+			[Bindable]
+			private var _refreshTeachers:String = "刷新教师列表";
+			
+			[Bindable]
+			private var _listStudents:String = "查看学生列表";
+			
+			[Bindable]
+			private var _refreshStudents:String = "刷新学生列表";
+			
+			private function initApp():void
+			{
+				addCourseByOfficialIdButton.enabled = false;
+				addCourseByListButton.enabled = false;
+				deleteAccountButton.enabled = false;
+				alterAccountButton.enabled = false;
+				removeCourseButton.enabled = false;
+			}
+			
+			private function getRowNum(oItem:Object,iCol:int):String
+    		{
+    			var index:int = (coursesDG.dataProvider as ArrayCollection).getItemIndex(oItem) + 1;
+    			return index.toString();
+    		}
+    		
+    		private function teachersCount(oItem:Object,iCol:int):String
+    		{
+    			var index:int = (teachersDG.dataProvider as ArrayCollection).getItemIndex(oItem) + 1;
+    			return index.toString();
+    		}
+    		
+    		private function studentsCount(oItem:Object,iCol:int):String
+    		{
+    			var index:int = (studentsDG.dataProvider as ArrayCollection).getItemIndex(oItem) + 1;
+    			return index.toString();
+    		}
+    		
+    		private function handleTeachersDGChange():void
+    		{
+    			if (teachersDG.selectedItem != null)
+				{
+					studentsDG.selectedItem = null;
+					_model.selectedUser = User(teachersDG.selectedItem);
+				}
+				else
+				{
+					_model.selectedUser = null;
+				}
+    		}
+    		
+    		private function handleStudentsDGChange():void
+    		{
+    			if (studentsDG.selectedItem != null)
+				{
+					teachersDG.selectedItem = null;
+					_model.selectedUser = User(studentsDG.selectedItem);
+				}
+				else
+				{
+					_model.selectedUser = null;
+				}
+    		}
+    		
+    		private function listTeachers():void
+    		{
+    			CairngormUtils.dispatchEvent(EventNames.LIST_ALL_TEACHERS);
+    		}
+    		
+    		private function listStudents():void
+    		{
+    			CairngormUtils.dispatchEvent(EventNames.LIST_ALL_STUDENTS);
+    		}
+    		
+    		private function nameToShow(item:Object, column:DataGridColumn):String
+			{
+				return item.lastName + " " + item.firstName;
+			}
+			
+			private function openOfficialIdInput():void
+			{
+				var inputWindow:IFlexDisplayObject = PopUpManager.createPopUp(Application.application.mainStack, AddCoursesByOfficialIdBox, true);
+    			PopUpManager.centerPopUp(inputWindow);
+			}
+			
+			private function openCoursesList():void
+			{
+				var listWindow:IFlexDisplayObject = PopUpManager.createPopUp(Application.application.mainStack, AddCoursesByListBox, true);
+    			PopUpManager.centerPopUp(listWindow);
+			}
+			
+			private function openCreateUserBox():void
+			{
+				var userWindow:IFlexDisplayObject = PopUpManager.createPopUp(Application.application.mainStack, AccountCreateBox);
+    			PopUpManager.centerPopUp(userWindow);
+			}
+			
+			private function openUpdateUserBox():void
+			{
+				var userWindow:IFlexDisplayObject = PopUpManager.createPopUp(Application.application.mainStack, AccountUpdateBox, true);
+    			PopUpManager.centerPopUp(userWindow);
+			}
+			
+			private function openAccountDeleteBox():void
+			{
+				var deleteWindow:IFlexDisplayObject = PopUpManager.createPopUp(Application.application.mainStack, AccountDeleteBox, true);
+    			PopUpManager.centerPopUp(deleteWindow);
+			}
+			
+			private function handleDeleteCoursesButtonClick():void
+    		{
+    			Alert.show("您确定要从用户 “" + _model.selectedUser.lastName + " " + _model.selectedUser.firstName + "” 的课程列表中移除这些课程吗？", 
+					"确认移除课程", Alert.NO|Alert.YES, this, removeCourses, null, Alert.NO);
+    		}
+    		
+    		private function removeCourses(event:CloseEvent):void
+			{
+				if (event.detail == Alert.YES)
+				{
+					var coursesArray:Array = coursesDG.selectedItems;
+					var course:Course;
+					for each (course in coursesArray)
+					{
+						CairngormUtils.dispatchEvent(EventNames.DELETE_USER_COURSE, course);
+					}
+				}
+			}
+			
+			private function handleDeleteUserButtonClick():void
+    		{
+    			Alert.show("您确定要删除用户 “" + _model.selectedUser.lastName + " " + _model.selectedUser.firstName + "” 吗 (此操作不可撤销)？删除后，属于此用户的课程问题库条目和/或提问也都将被删除，此用户的课程列表也将被删除。", 
+					"确认删除用户", Alert.NO|Alert.YES, this, deleteUser, null, Alert.NO);
+    		}
+    		
+    		private function deleteUser(event:CloseEvent):void
+			{
+				if (event.detail == Alert.YES)
+				{
+					CairngormUtils.dispatchEvent(EventNames.DESTROY_USER, _model.selectedUser);
+				}
+			}
+		]]>
+	</mx:Script>
+	<mx:HDividedBox width="100%" height="100%">
+		<mx:VBox width="60%" height="100%" horizontalAlign="center">
+			<mx:Button width="85%" height="20" label="新建用户..." click="openCreateUserBox()" color="#ff9900"/>
+			<mx:HDividedBox width="100%" height="100%">
+				<mx:VBox width="50%" height="100%" horizontalAlign="center">
+					<mx:Button height="20" label="{_model.teachers == null ? _listTeachers : _refreshTeachers}" click="listTeachers()" width="200"/>
+					<mx:DataGrid id="teachersDG" width="100%" height="100%" dataProvider="{_model.teachers}" rowHeight="24"
+					    change="handleTeachersDGChange()"
+					    doubleClickEnabled="{teachersDG.selectedItem != null}" doubleClick="openUpdateUserBox()">
+						<mx:columns>
+							<mx:DataGridColumn labelFunction="teachersCount" width="23" editable="false"
+								sortable="false" draggable="false" textAlign="center"
+								paddingLeft="0" paddingRight="0"/>
+							<mx:DataGridColumn headerText="工号" dataField="officialId" width="60"/>
+							<mx:DataGridColumn headerText="姓名" dataField="lastName" labelFunction="nameToShow"/>
+							<mx:DataGridColumn headerText="答疑数" dataField="entriesSum" width="50"/>
+						</mx:columns>
+					</mx:DataGrid>
+				</mx:VBox>
+				<mx:VBox width="50%" height="100%" horizontalAlign="center">
+					<mx:Button height="20" label="{_model.students == null ? _listStudents : _refreshStudents}" click="listStudents()" width="200"/>
+					<mx:DataGrid id="studentsDG" width="100%" height="100%" dataProvider="{_model.students}" rowHeight="24"
+					    change="handleStudentsDGChange()"
+					    doubleClickEnabled="{studentsDG.selectedItem != null}" doubleClick="openUpdateUserBox()">
+						<mx:columns>
+							<mx:DataGridColumn labelFunction="studentsCount" width="23" editable="false"
+								sortable="false" draggable="false" textAlign="center"
+								paddingLeft="0" paddingRight="0"/>
+							<mx:DataGridColumn headerText="学号" dataField="officialId" width="60"/>
+							<mx:DataGridColumn headerText="姓名" dataField="lastName" labelFunction="nameToShow"/>
+							<mx:DataGridColumn headerText="提问数" dataField="entriesSum" width="50"/>
+						</mx:columns>
+					</mx:DataGrid>	
+				</mx:VBox>
+			</mx:HDividedBox>
+			<mx:HBox width="100%" horizontalAlign="center">
+				<mx:Button id="addCourseByOfficialIdButton" label="通过输入课程号为用户添加课程..." width="220" height="25" 
+					enabled="{(teachersDG.selectedItem != null || studentsDG.selectedItem != null) ? true : false}" 
+					click="openOfficialIdInput()"/>
+				<mx:Button id="addCourseByListButton" label="通过选择课程列表为用户添加课程..." width="220" height="25" click="openCoursesList()" 
+					enabled="{(teachersDG.selectedItem != null || studentsDG.selectedItem != null) ? true : false}"/>
+			</mx:HBox>
+			<mx:HBox width="100%" horizontalAlign="center">
+				<mx:Button id="alterAccountButton" label="修改用户..." height="20" width="100" 
+					enabled="{(teachersDG.selectedItem != null || studentsDG.selectedItem != null) ? true : false}"
+				    click="openUpdateUserBox()"/>
+				<mx:Button id="deleteAccountButton" label="删除用户" height="20" width="100"
+					enabled="{(teachersDG.selectedItem != null || studentsDG.selectedItem != null) ? true : false}"
+					textRollOverColor="#ff0000" click="handleDeleteUserButtonClick()"/>
+				<mx:Button id="deleteAccountByOfficialIdButton" label="批量删除用户..." height="20" width="100"
+					textRollOverColor="#ff0000" click="openAccountDeleteBox()"/>
+			</mx:HBox>
+		</mx:VBox>
+		<mx:Panel width="40%" height="100%" horizontalAlign="center" toolTip="按住ctrl或shift键可多选"
+			title="用户“{(_model.selectedUser == null) ? '(尚未选择)' : _model.selectedUser.lastName + ' ' + _model.selectedUser.firstName}”的课程列表">
+			<mx:VBox width="100%" height="100%" horizontalAlign="center">
+				<mx:DataGrid id="coursesDG" width="100%" height="100%" dataProvider="{_model.selectedUser.courses}" 
+					rowHeight="24" allowMultipleSelection="true">
+					<mx:columns>
+						<mx:DataGridColumn labelFunction="getRowNum" width="23" editable="false"
+							sortable="false" draggable="false" textAlign="center"
+							paddingLeft="0" paddingRight="0"/>
+						<mx:DataGridColumn headerText="课程编号" dataField="officialId" width="68"/>
+						<mx:DataGridColumn headerText="课程名" dataField="name"/>
+						<mx:DataGridColumn headerText="课程描述" dataField="description"/>
+					</mx:columns>
+				</mx:DataGrid>
+			</mx:VBox>
+				<mx:Button id="removeCourseButton" label="从选定用户的课程列表中移除所选课程" height="20" click="handleDeleteCoursesButtonClick()"
+					enabled="{coursesDG.selectedItem != null}" textRollOverColor="#ff0000"/>
+		</mx:Panel>
+	</mx:HDividedBox>
+</mx:VBox>

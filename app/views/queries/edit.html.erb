@@ -1,0 +1,32 @@
+<h1>Editing query</h1>
+
+<%= error_messages_for :query %>
+
+<% form_for(@query) do |f| %>
+  <p>
+    <b>Course</b><br />
+    <%= f.text_field :course_id %>
+  </p>
+
+  <p>
+    <b>Question</b><br />
+    <%= f.text_field :question %>
+  </p>
+
+  <p>
+    <b>Solved</b><br />
+    <%= f.check_box :solved %>
+  </p>
+
+  <p>
+    <b>Notes</b><br />
+    <%= f.text_area :notes %>
+  </p>
+
+  <p>
+    <%= f.submit "Update" %>
+  </p>
+<% end %>
+
+<%= link_to 'Show', @query %> |
+<%= link_to 'Back', queries_path %>

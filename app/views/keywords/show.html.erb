@@ -1,0 +1,23 @@
+<p>
+  <b>Entry:</b>
+  <%=h @keyword.entry_id %>
+</p>
+
+<p>
+  <b>Value:</b>
+  <%=h @keyword.value %>
+</p>
+
+<p>
+  <b>Relevance:</b>
+  <%=h @keyword.relevance %>
+</p>
+
+<p>
+  <b>Notes:</b>
+  <%=h @keyword.notes %>
+</p>
+
+
+<%= link_to 'Edit', edit_keyword_path(@keyword) %> |
+<%= link_to 'Back', keywords_path %>

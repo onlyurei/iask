@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" width="380" height="400" 
+	title="新建课程" showCloseButton="true" close="handleTitleWindowClose(event)">
+	<mx:Script>
+		<![CDATA[
+			import com.iask.model.IaskModelLocator;
+			import com.iask.model.Course;
+			import com.iask.control.EventNames;
+			import com.iask.util.CairngormUtils;
+			import mx.controls.Alert;
+			import mx.validators.Validator;
+			import mx.events.CloseEvent;
+            import mx.managers.PopUpManager;
+
+
+			[Bindable]
+			private var _model:IaskModelLocator = IaskModelLocator.getInstance();
+
+            private function handleTitleWindowClose(evt:CloseEvent):void 
+            {
+                PopUpManager.removePopUp(this);
+            }
+            
+			private function validateAndSubmit():void
+			{
+				var results:Array = Validator.validateAll(
+				[officialIdValidator, nameValidator, descriptionValidator]);
+				if (results.length > 0)
+				{
+					Alert.show("请改正表单上用红色线框标出的错误。", "创建课程失败");
+					return;
+				}
+				var course:Course = new Course();
+				course.officialId = officialIdTI.text;
+				course.name = nameTI.text;
+				course.description = descriptionTI.text;
+				course.notes = notesTI.text;
+				CairngormUtils.dispatchEvent(EventNames.CREATE_COURSE, course);
+			}
+		]]>
+	</mx:Script>
+	<mx:StringValidator id="officialIdValidator" source="{officialIdTI}" property="text"
+	   required="true" minLength="2" maxLength="40"/>
+	<mx:StringValidator id="nameValidator" source="{nameTI}" property="text"
+	   required="true" minLength="2" maxLength="40"/>
+	<mx:StringValidator id="descriptionValidator" source="{descriptionTI}" property="text"
+	   required="true" minLength="4"/>
+	<mx:VBox width="100%" height="100%" horizontalAlign="center">
+		<mx:Form labelWidth="65">
+			<mx:FormItem required="true" label="课程编号">
+				<mx:TextInput id="officialIdTI" width="220"/>
+			</mx:FormItem>
+			<mx:FormItem required="true" label="课程名称">
+				<mx:TextInput id="nameTI" width="220"/>
+			</mx:FormItem>
+			<mx:FormItem required="true" label="课程描述">
+				<mx:TextArea id="descriptionTI"  height="120" width="220"/>
+			</mx:FormItem>
+			<mx:FormItem label="备注">
+				<mx:TextArea id="notesTI"  height="90" width="220"/>
+			</mx:FormItem>
+			<mx:FormItem>
+				<mx:Button label="提交" height="25" width="220" click="validateAndSubmit()"/>
+			</mx:FormItem>
+		</mx:Form>
+	</mx:VBox>
+</mx:TitleWindow>

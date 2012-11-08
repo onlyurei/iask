@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" width="360"
+    title="课程“{courseSelectCB.selectedItem.name}”的所有关键词" showCloseButton="true" close="handleTitleWindowClose(event)">
+	<mx:Script>
+		<![CDATA[
+			import com.iask.model.IaskModelLocator;
+			import com.iask.model.Course;
+			import com.iask.model.Keyword;
+			import com.iask.util.CairngormUtils;
+			import com.iask.control.EventNames;
+			import mx.events.CloseEvent;
+            import mx.managers.PopUpManager;
+			
+			[Bindable]
+			private var _model:IaskModelLocator = IaskModelLocator.getInstance();
+			
+			private function handleTitleWindowClose(evt:CloseEvent):void 
+            {
+                PopUpManager.removePopUp(this);
+            }
+            
+            private function handleCourseSelectCBChange():void
+			{
+				_model.selectedCourse = Course(courseSelectCB.selectedItem);
+				if (courseSelectCB.selectedItem.keywords == null)
+				{
+					CairngormUtils.dispatchEvent(EventNames.LIST_COURSE_KEYWORDS, courseSelectCB.selectedItem);
+				}
+			}
+			
+			private function handleKeywordsDGChange():void
+			{
+				//_model.selectedCourse = Course(courseSelectCB.selectedItem);
+				_model.selectedKeyword = "";
+				for each (var i:Keyword in keywordsDG.selectedItems)
+				{
+					_model.selectedKeyword += i.value + " ";
+				}
+			}
+		]]>
+	</mx:Script>
+	<mx:ComboBox dataProvider="{_model.courses}" labelField="name" prompt="选择课程..." width="100%" id="courseSelectCB" 
+		change="handleCourseSelectCBChange()" rowCount="20" selectedItem="{_model.selectedCourse}"/>
+	<mx:DataGrid height="100%" width="100%" id="keywordsDG" change="handleKeywordsDGChange()" rowHeight="24"
+		dataProvider="{courseSelectCB.selectedItem.keywords}" allowMultipleSelection="true">
+		<mx:columns>
+			<mx:DataGridColumn headerText="关键词 (按住ctrl或shift键可多选)" dataField="value"/>
+		</mx:columns>
+	</mx:DataGrid>
+</mx:TitleWindow>
